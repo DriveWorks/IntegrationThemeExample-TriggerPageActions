@@ -1,0 +1,25 @@
+body {
+  background: #fafafa;
+  padding: 1em;
+  margin: 0;
+  font-family: sans-serif;
+}
+
+.output {
+  margin-bottom: 2em;
+}
+
+.message {
+  width: fit-content;
+  padding: .5em;
+  background: #fde68a;
+}
+.message.info {
+  background: #bae6fd;
+}
+.message.update {
+  background: #ddd6fe;
+}
+.message.success {
+  background: #bbf7d0;
+}

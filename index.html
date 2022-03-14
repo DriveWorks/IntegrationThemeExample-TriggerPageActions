@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trigger Page Actions | DriveWorks</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <div id="form-output" class="output">
+        Loading...
+    </div>
+
+    <div id="page-content">
+        <h2>This is content on the parent page.</h2>
+        <p>This content can be toggled by <strong>pressing the Control on the Form.</strong></p>
+        <p id="input-message" class="message">Try entering a number into the input, then press enter or anywhere outside the input.</p>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const outputElement = document.querySelector("#form-output");
+        const pageContent = document.querySelector("#page-content");
+        const messageElement = document.querySelector("#input-message");
+
+        // Run on client load
+        async function dwClientLoaded() {
+            try {
+
+                // Create DriveWorks API client
+                const DW_CLIENT = new window.DriveWorksLiveClient(config.serverUrl);
+
+                // Login to group
+                await DW_CLIENT.loginGroup(config.groupAlias);
+
+                // Create Specification
+                const specification = await DW_CLIENT.createSpecification(config.groupAlias, config.projectName);
+
+                // Listen for changes to Constants
+                // IMPORTANT NOTE: requires a Specification to be rendered
+                // - To listen for Variable changes, use 'registerVariableValueChangedDelegate'
+                specification.registerConstantValueChangedDelegate(data => processConstants(data));
+
+                // Render Specification
+                outputElement.innerHTML = "";
+                await specification.render(outputElement);
+
+                // Access Specification Form element
+                const form = specification.specificationFormElement;
+
+                // Listen for Control updates
+                form.addEventListener("ControlUpdated", function(e) {
+                    handleControlUpdates(e.detail);
+                });
+
+                // Listen for Form updates
+                form.addEventListener("FormUpdated", function(e) {
+                    handleFormUpdates(e.detail);
+                });
+
+                // Click Event 1) Attach event listener to Control (present on initial load)
+                // IMPORTANT NOTE: if a Control is removed (e.g. changing Forms), the event listener will not be re-attached when shown again.
+                const contentButton = document.querySelector(".spec-form button[data-id*='ToggleContentButton']");
+                contentButton.addEventListener("click", togglePageContent);
+
+                // Click Event 2) Attach event listener to the form's permanent parent element - to track conditionally rendered Controls (not present on initial load)
+                // This is retained when Controls are added and removed.
+                outputElement.addEventListener("click", formClicked);
+
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        // React to click events inside of the Form element
+        function formClicked(event) {
+
+            // Target using Form Control data-id attribute (Control Name)
+            const dataId = event.target.dataset.id;
+            if (dataId && dataId.includes("RefreshPageButton")) {
+                location.reload();
+            }
+
+            // Target using Form Control Metadata attribute.
+            // If the element clicked does not have metadata, use the Control parent element's metadata.
+            let metadata = event.target.dataset.metadata;
+            if (!metadata) {
+                const parent = event.target.closest("[data-control-name]");
+                metadata = parent ? parent.dataset.metadata : "";
+            }
+
+            if (metadata && metadata.includes("RedirectButton")) {
+                window.location.href = "https://driveworkslive.com";
+            }
+        }
+
+        // React to a specific Control and Control Property change
+        function handleControlUpdates(data) {
+            switch(data.controlName) {
+                case "ValueInput":
+                    const value = data.controlData.DisplayValue;
+                    if (value > 100) {
+                        messageElement.innerHTML = "That's a large number!";
+                        messageElement.classList.add("success");
+                    } else {
+                        messageElement.innerHTML = "Enter a larger number.";
+                        messageElement.classList.remove("success");
+                    }
+                    break;
+                case "ToggleContentButton":
+                    // Click Event 3) Attach click event listener every time the Control is made visible e.g. after Form change
+                    const contentButton = document.querySelector(".spec-form button[data-id*='ToggleContentButton']");
+                    if (data.controlData.Visible){
+                        contentButton.addEventListener("click", togglePageContent);
+                    } else {
+                        contentButton.removeEventListener("click", togglePageContent);
+                    }
+                    break;
+            }
+        }
+
+        // React to Form updates
+        function handleFormUpdates(data) {
+            switch(data.specData.formName) {
+                case "FormTwo":
+                    const newFormMessage = document.createElement("p");
+                    newFormMessage.classList.add("message", "info");
+                    newFormMessage.innerHTML = "The second Form was shown.";
+                    pageContent.appendChild(newFormMessage);
+                    break;
+            }
+        }
+
+        // Process Constant changes
+        function processConstants(constant) {
+            const name = constant.constantName.replace("DWConstant", ""); // Remove common prefix for easier reference
+            const value = constant.constantValue;
+
+            switch (name) {
+                case "MyConstantName":
+                    const constantMessage = document.createElement("p");
+                    constantMessage.classList.add("message", "update");
+                    constantMessage.innerHTML = `Constant changed. ${name}: ${value}`;
+                    pageContent.appendChild(constantMessage);
+                    break;
+            }
+        }
+
+        // Example custom site function - toggle on-page content
+        function togglePageContent() {
+            pageContent.style.display = pageContent.style.display === "none" ? "" : "none";
+        }
+    </script>
+
+    <!-- Option A) Directly load Client Library -->
+    <!-- <script src="https://YOUR-THEME-SERVER.COM/DriveworksLiveIntegrationClient.min.js" onload="dwClientLoaded()"></script> -->
+
+    <!-- Option B) Inject Client Library dynamically from server url in config file -->
+    <script>
+        (function(doc, script) {
+            script = doc.createElement("script");
+            script.src = config.serverUrl + "/DriveWorksLiveIntegrationClient.min.js";
+            script.onload = () => dwClientLoaded(); // Custom local function run when client has loaded
+            doc.body.appendChild(script);
+        }(document));
+    </script>
+
+</body>
+</html>
