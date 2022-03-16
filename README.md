@@ -2,7 +2,7 @@
 ### Version: 1.0.0
 #### Minimum DriveWorks Version: 18.0
 
-A simple distributable template that demonstrates how to listen to Form events and trigger on-page actions.
+A distributable example that demonstrates how to listen to Form events and trigger on-page actions.
 
 Please note: DriveWorks are not accepting pull requests for this example.  
 Join our [online community](https://my.driveworks.co.uk) for discussion, resources and to suggest other examples.
