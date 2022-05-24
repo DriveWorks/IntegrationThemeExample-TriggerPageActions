@@ -11,10 +11,12 @@ Join our [online community](https://my.driveworks.co.uk) for discussion, resourc
 
 ---
 
-The example shows how to react to:
+### This example:
+
+Demonstrates how to react to the following:
 - Macro Button presses - in 3 different ways, each with their own pros/cons:
     1. Attach a click event listener directly to a Control.
-    2. Attach a click event listener to the form's permanent parent element.
+    2. Attach a click event listener to the Form's permanent parent element.
     3. Attach a click event listener every time the Control is made visible.
 - Control Property changes
 - Constant changes
